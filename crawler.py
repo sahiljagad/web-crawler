@@ -60,8 +60,6 @@ while len(urls) != 0:
                             urls.add("https://dothebay.com" + url)
                     except:
                         print(url, "not visited.")
-            if len(visited) == 100:
-                break
 
 print(len(visited), visited)
 print("Done")
