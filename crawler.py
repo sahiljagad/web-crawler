@@ -4,6 +4,7 @@ import time
 import re
 from datetime import date, timedelta
 from bs4 import BeautifulSoup
+import pandas as pd
 
 #function to create starting url list
 def populate_url_start_set(today, urls):
@@ -28,7 +29,7 @@ regxp = re.compile(r"((\/events\/)|(\/\?page=\d))((\d{4})\/(\d{0,2})\/(\d{0,2}))
 urls = set()
 populate_url_start_set(today, urls)
 visited = []
-data = {}
+data = []
 
 # until all pages have been visited
 while len(urls) != 0:
@@ -61,21 +62,18 @@ while len(urls) != 0:
         if 'page=' not in current_url and len(current_url) > 36:
             try:
                 event = {}
-                event["name"] = soup.select_one('.ds-event-title-text').text.strip() 
-                event['location'] = soup.select_one('.ds-ticket-info').text.strip() 
-                event["date"] = soup.select_one('.ds-event-date').text.strip() 
-                event["price"] = soup.find(itemprop='price').text.strip() #fix
-                event["time"] = soup.select_one('.ds-event-time').text.strip() #fix
-                event['location'] = soup.select_one('.ds-venue-name').text.replace("\u200b", "").strip()
-                event["website"] = soup.find('a', {'class': 'ds-buy-tix'}).get("href")
-                data[event["name"]] = event
-            except Exception as e:
-                print("error occured ", e)
+                event["Name"] = soup.select_one('.ds-event-title-text').text.strip() 
+                event['Location'] = soup.select_one('.ds-ticket-info').text.strip() 
+                event["Date"] = soup.select_one('.ds-event-date').text.strip() 
+                event["Price"] = soup.find(itemprop='price').text.replace(" ", "").strip()
+                event["Time"] = soup.select_one('.ds-event-time').text.strip()
+                event['Location'] = soup.select_one('.ds-venue-name').text.replace("\u200b", "").strip()
+                event["Website"] = soup.find('a', {'class': 'ds-buy-tix'}).get("href")
+                data.append(event)
+            except:
+                pass
 
-        if len(visited) == 50:
-            break
+df = pd.DataFrame(data)
+df.to_csv('bayAreaEvents.csv', index=False)
 
-
-print(data)
-print()
 print("Done")
