@@ -50,16 +50,32 @@ while len(urls) != 0:
 
         for link_element in soup.find_all('a', href=True):
             url = link_element['href']
-            if (regxp.match(url)) is not None: 
+            if regxp.match(url) is not None: 
                 if 'page=' in url:
                     urls.add("https://dothebay.com" + url)
                 else:
-                    try:
-                        url_date = map(lambda x:int(x), url.split("/")[2:5])
-                        if today_list <= list(url_date) <= future_list:
-                            urls.add("https://dothebay.com" + url)
-                    except:
-                        print(url, "not visited.")
+                    url_date = map(lambda x:int(x), url.split("/")[2:5])
+                    if today_list <= list(url_date) <= future_list:
+                        urls.add("https://dothebay.com" + url)
+                
+        if 'page=' not in current_url and len(current_url) > 36:
+            try:
+                event = {}
+                event["name"] = soup.select_one('.ds-event-title-text').text.strip() 
+                event['location'] = soup.select_one('.ds-ticket-info').text.strip() 
+                event["date"] = soup.select_one('.ds-event-date').text.strip() 
+                event["price"] = soup.find(itemprop='price').text.strip() #fix
+                event["time"] = soup.select_one('.ds-event-time').text.strip() #fix
+                event['location'] = soup.select_one('.ds-venue-name').text.replace("\u200b", "").strip()
+                event["website"] = soup.find('a', {'class': 'ds-buy-tix'}).get("href")
+                data[event["name"]] = event
+            except Exception as e:
+                print("error occured ", e)
 
-print(len(visited), visited)
+        if len(visited) == 50:
+            break
+
+
+print(data)
+print()
 print("Done")
