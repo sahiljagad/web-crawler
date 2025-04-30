@@ -1,79 +1,67 @@
-from random import uniform
+from bs4 import BeautifulSoup
 import requests
 import time
 import re
 from datetime import date, timedelta
-from bs4 import BeautifulSoup
-import pandas as pd
+from random import uniform
+from sqlalchemy.orm import Session
+from database import SessionLocal, engine
+from models import Event
 
-#function to create starting url list
+# Function to create starting URLs
 def populate_url_start_set(today, urls):
-    for i in range(1,8):
+    for i in range(1, 8):
         day = today + timedelta(days=i)
         urls.add(f"https://dothebay.com/events/{day.year}/{day.month}/{day.day}")
-
 
 # Get the current date
 today = date.today()
 week_from_now = today + timedelta(days=7)
 
-# Extract day, month, and year into lists
-today_list = [today.year, today.month, today.day]
-future_list = [week_from_now.year, week_from_now.month, week_from_now.day]
-
-#url regex
+# Regex for event URLs
 regxp = re.compile(r"((\/events\/)|(\/\?page=\d))((\d{4})\/(\d{0,2})\/(\d{0,2}))")
-    
-# initialize the list of discovered urls with the pages of events in next
 
+# Initialize the set of URLs to visit
 urls = set()
 populate_url_start_set(today, urls)
 visited = []
-data = []
 
-# until all pages have been visited
-while len(urls) != 0:
+# Database session
+db = SessionLocal()
 
-    # get the page to visit from the list
+# Web scraping loop
+while urls:
     current_url = urls.pop()
-    print("Current URL: ", current_url, "\n")
+    print("Crawling:", current_url)
     
-    # crawling logic
     if current_url not in visited:
         response = requests.get(current_url)
-
-        #avoid loops
         visited.append(current_url)
-
-        # Add a random delay between 3 and 7 seconds
-        time.sleep(uniform(3, 7))
+        time.sleep(uniform(3, 7))  # Random delay to avoid bans
         soup = BeautifulSoup(response.content, "html.parser")
 
-        for link_element in soup.find_all('a', href=True):
-            url = link_element['href']
-            if regxp.match(url) is not None: 
-                if 'page=' in url:
-                    urls.add("https://dothebay.com" + url)
-                else:
-                    url_date = map(lambda x:int(x), url.split("/")[2:5])
-                    if today_list <= list(url_date) <= future_list:
-                        urls.add("https://dothebay.com" + url)
-                
+        # Extract new URLs
+        for link in soup.find_all('a', href=True):
+            url = link['href']
+            if regxp.match(url):
+                full_url = "https://dothebay.com" + url
+                urls.add(full_url)
+
+        # Extract event data
         if 'page=' not in current_url and len(current_url) > 36:
             try:
-                event = {}
-                event["Name"] = soup.select_one('.ds-event-title-text').text.strip() 
-                event['Location'] = soup.select_one('.ds-ticket-info').text.strip() 
-                event["Date"] = soup.select_one('.ds-event-date').text.strip() 
-                event["Price"] = soup.find(itemprop='price').text.replace(" ", "").strip()
-                event["Time"] = soup.select_one('.ds-event-time').text.strip()
-                event['Location'] = soup.select_one('.ds-venue-name').text.replace("\u200b", "").strip()
-                event["Website"] = soup.find('a', {'class': 'ds-buy-tix'}).get("href")
-                data.append(event)
-            except:
-                pass
+                event = Event(
+                    name=soup.select_one('.ds-event-title-text').text.strip(),
+                    location=soup.select_one('.ds-venue-name').text.strip(),
+                    date=soup.select_one('.ds-event-date').text.strip(),
+                    price=soup.find(itemprop='price').text.strip(),
+                    time=soup.select_one('.ds-event-time').text.strip(),
+                    website=soup.find('a', {'class': 'ds-buy-tix'}).get("href"),
+                )
+                db.add(event)
+                db.commit()
+            except Exception as e:
+                print("Error parsing event:", e)
 
-df = pd.DataFrame(data)
-df.to_csv('bayAreaEvents.csv', index=False)
-
-print("Done")
+db.close()
+print("Crawling complete.")
