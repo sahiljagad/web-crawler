@@ -13,7 +13,7 @@ BASE_URL = "https://dothebay.com"
 HEADERS = {}  # You can add headers later if needed (e.g., User-Agent with contact info for politeness)
 
 # Compile regex once
-EVENT_REGEX = re.compile(r"((\/events\/)|(\/\?page=\d))((\d{4})\/(\d{0,2})\/(\d{0,2}))")
+EVENT_REGEX = re.compile(r"((\/events\/)|(\/\?page=\d))((\d{4})\/(\d{0,2})\/(\d{0,2}))(\/?)(.*)")
 
 def populate_start_urls(today: date) -> set:
     urls = set()
@@ -48,8 +48,8 @@ def extract_event_data(soup: BeautifulSoup) -> dict:
 def extract_date_from_url(url: str):
     try:
         parts = urlparse(url).path.strip("/").split("/")
-        if len(parts) >= 4 and parts[-3].isdigit():
-            year, month, day = int(parts[-3]), int(parts[-2]), int(parts[-1])
+        if len(parts) >= 4:
+            year, month, day = int(parts[1]), int(parts[2]), int(parts[3])
             return date(year, month, day)
     except:
         pass
@@ -84,6 +84,7 @@ def crawl():
 
                 if full_url not in visited_urls and event_date:
                     if today <= event_date <= end_date:
+                        print(f"Enqueuing URL: {full_url}")
                         urls_to_visit.add(full_url)
 
         # Parse event details
