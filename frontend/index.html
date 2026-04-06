@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <title>Bay Area Events</title>
+</head>
+<body>
+  <header>
+    <h1>Bay Area Events</h1>
+    <p class="subtitle">What's happening this week</p>
+  </header>
+
+  <div class="filters">
+    <input type="date" id="filter-date" aria-label="Filter by date">
+    <select id="filter-price" aria-label="Filter by price">
+      <option value="">All Prices</option>
+      <option value="Free">Free</option>
+    </select>
+    <input type="text" id="filter-location" placeholder="Search location..." aria-label="Filter by location">
+  </div>
+
+  <div id="events" class="events-container">
+    <div class="loading">Loading events...</div>
+  </div>
+
+  <footer>
+    <a href="#" id="subscribe-link" class="subscribe-btn">Subscribe to Notifications</a>
+    <p class="footer-note">Install the <a href="https://ntfy.sh" target="_blank" rel="noopener">ntfy app</a> to get weekly event alerts</p>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>

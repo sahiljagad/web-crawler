@@ -1,7 +1,4 @@
-fastapi
-uvicorn
-sqlalchemy
-psycopg2
-alembic
 beautifulsoup4
 requests
+supabase
+python-dotenv
